@@ -1,0 +1,85 @@
+import holoviews as hv
+import hvplot.pandas
+import intake
+import panel as pn
+
+hv.streams.PlotSize.scale = 0.2
+
+pn.extension('tabulator', design='material', template='material', theme='dark')
+cat = intake.open_anaconda_catalog('examples')['uswtdb']
+
+df = pn.state.as_cached('windturbines', cat.wind_turbines.read)
+
+df['x'], df['y'] = hv.element.tiles.lon_lat_to_easting_northing(df.xlong, df.ylat)
+
+df.head()
+import pandas as pd
+import numpy as np
+import holoviews as hv
+from holoviews import opts
+import hvplot.pandas  # Ensure hvplot is available
+
+# Initialize Holoviews extension for Jupyter
+hv.extension('bokeh')
+
+# Create a DataFrame with random data
+np.random.seed(42)
+df = pd.DataFrame({
+    'x': np.random.rand(100),
+    'y': np.random.rand(100)
+})
+
+# Initialize link selections
+ls = hv.link_selections.instance()
+
+# Create a plot with interactive linked selections
+# Removed the tiles parameter to avoid issues with geoviews and cartopy
+plot = df.hvplot.points('x', 'y', rasterize=True, cmap='viridis', cnorm='eq_hist', 
+                        xaxis=None, yaxis=None, responsive=True, min_height=500)
+
+# Apply linked selections to the plot
+plot_ls = ls(plot)
+
+plot_ls
+import pandas as pd
+import numpy as np
+import holoviews as hv
+import hvplot.pandas  # Import hvplot for pandas
+import panel as pn  # Ensure panel is imported
+
+hv.extension('bokeh')
+
+# Assuming df is already defined and has the correct columns.
+# Example to simulate the existence of the DataFrame with specified columns:
+np.random.seed(42)
+df = pd.DataFrame({
+    't_state': np.random.choice(['State1', 'State2', 'State3'], 100),
+    't_county': np.random.choice(['County1', 'County2', 'County3'], 100),
+    't_manu': np.random.choice(['Manufacturer1', 'Manufacturer2', 'Manufacturer3'], 100),
+    'p_year': np.random.randint(1990, 2021, 100),
+    'p_name': np.random.choice(['Product1', 'Product2', 'Product3'], 100),
+    'p_cap': np.random.rand(100) * 100
+})
+
+ls = hv.link_selections.instance()  # Initialize linked selections
+df_sel = ls.selection_param(df)
+
+# Create a dynamic interactive view
+dfi_sel = hvplot.bind(lambda df: df, df_sel).interactive()[['t_state', 't_county', 't_manu', 'p_year', 'p_name', 'p_cap']]
+
+# Setup a Tabulator widget with remote pagination
+table = pn.widgets.Tabulator(dfi_sel, pagination='remote', page_size=10, sizing_mode='stretch_width', show_index=True)
+
+table
+groupby = pn.widgets.RadioButtonGroup(options=['p_year', 't_state', 't_manu'])
+topn = pn.widgets.IntSlider(start=5, end=50, name='Top N')
+
+agg_bar_plot = dfi_sel.groupby(groupby)[['p_cap']].sum().sort_values('p_cap', ascending=False).iloc[:topn].hvplot.bar(rot=45, responsive=True, min_height=300)
+
+agg_bar_plot
+pn.Column(
+    plot_ls,
+    pn.Row(
+        table, agg_bar_plot.layout(sizing_mode='stretch_width')
+    )
+).servable(title='Windturbine Dashboard')
